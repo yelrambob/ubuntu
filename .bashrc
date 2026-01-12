@@ -195,6 +195,15 @@ nanno() {
   fi
 }
 
+catn() {
+  local target
+  target=$(ls -a1 | sed -n "${1}p")
 
+  [ -n "$target" ] || { echo "No such item number: $1"; return 1; }
 
-
+  if [ "$EUID" -eq 0 ]; then
+    cat "$target"
+  else
+    sudo cat "$target"
+  fi
+}
