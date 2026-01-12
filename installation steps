@@ -1,0 +1,93 @@
+#steps to set up MM kiosk 
+
+[Raspberry Pi 3 B+]
+   └─ Raspbian Lite + X11
+      └─ auto-login
+         └─ Chromium --kiosk http://MM_SERVER_IP:PORT
+
+[MagicMirror Server]
+   └─ pm2 start serveronly
+      └─ serves http://MM_SERVER_IP:PORT
+
+
+
+sudo apt update && sudo apt upgrade -y
+
+sudo apt install -y \
+  xserver-xorg \
+  xinit \
+  openbox \
+  chromium-browser \
+  unclutter
+
+sudo raspi-config
+          
+          1 System Options
+          → S5 Boot / Auto Login
+          → B2 Console Autologin
+sudo reboot
+
+sudo mkdir -p ~/.local/bin
+sudo nano ~/.local/bin/kiosk.sh
+
+#*************************************
+
+#!/bin/bash
+
+# Wait for network
+sleep 10
+
+# Disable screen blanking
+xset -dpms
+xset s off
+xset s noblank
+
+# Hide mouse cursor
+unclutter &
+
+# Launch Chromium in kiosk mode
+exec chromium-browser \
+  --kiosk \
+  --noerrdialogs \
+  --disable-infobars \
+  --disable-session-crashed-bubble \
+  --disable-translate \
+  --disable-features=TranslateUI \
+  --check-for-update-interval=31536000 \
+  http://34.26.147.91:8080
+
+
+#**********************************
+
+chmod +x ~/.local/bin/kiosk.sh
+
+sudo nano ~/.bash_profile
+##############
+if [[ -z "$DISPLAY" ]] && [[ "$(tty)" == "/dev/tty1" ]]; then
+  startx
+fi
+##############
+
+sudo nano ~/.xinitrc
+###########
+#!/bin/sh
+exec openbox-session &
+exec ~/.local/bin/kiosk.sh
+##########
+
+chmod +x ~/.xinitrc
+
+sudo nano /boot/config.txt
+
+#####gpu_mem=128########
+
+sudo reboot
+
+
+sudo nano /etc/xdg/openbox/autostart
+#########
+xset -dpms
+xset s off
+xset s noblank
+##########
+
