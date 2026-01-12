@@ -153,3 +153,48 @@ export PS1="\[\e[31m\][\[\e[m\]\[\e[38;5;172m\][\$(get_ip)] \[\e[38;5;214m\]\W\[
 #     )     )'--'(     (
 #      '---`      `---`
 #EOF
+
+# Numbered ls
+lsn() {
+  ls -a1 --color=always \
+  | awk '
+    BEGIN { i=1 }
+    {
+      printf "%2d: %s\n", i++, $0
+    }
+  '
+}
+
+# cd by number
+cdn() {
+  local target
+  target=$(ls -a1 | sed -n "${1}p")
+
+  if [ -z "$target" ]; then
+    echo "No such item number: $1"
+    return 1
+  fi
+
+  if [ -d "$target" ]; then
+    cd "$target"
+  else
+    echo "Not a directory: $target"
+  fi
+}
+#sudo nano numbered 
+nanno() {
+  local target
+  target=$(ls -a1 | sed -n "${1}p")
+
+  [ -n "$target" ] || { echo "No such item number: $1"; return 1; }
+
+  if [ "$EUID" -eq 0 ]; then
+    nano "$target"
+  else
+    sudo nano "$target"
+  fi
+}
+
+
+
+
