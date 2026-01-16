@@ -1,37 +1,61 @@
-#Aliases I've made
-
+# ===== MagicMirror =====
 alias checkconfig='node ~/MagicMirror/config/config.js --check'
 alias mmmodule='cd ~/MagicMirror/modules'
 alias mm='cd ~/MagicMirror'
-alias mmconfig='sudo nano -l ~/MagicMirror/config/config.js' #alter mm config
-alias plex_stop='cd ~/plex && docker compose down' #Stop Plex
-alias plex_start='cd ~/plex && docker compose up -d' #Start Plex
-alias pihole_stop='cd ~/pihole && docker compose down' #Stop pihole
-alias pihole_start='cd ~/pihole && docker compose up -d' #Start pihole
-alias makealias='sudo nano ~/.bash_aliases' #Makes aliases
-alias battery='upower -i $(upower -e | grep BAT) | grep -E "state|percentage"' #Check the battery health
-alias updatelog='sudo tail -n 30 /var/log/auto-updates.log' #Shows what recently updated
-alias seemonitor='for f in /sys/class/drm/*/status; do echo "$f: $(cat $f)"; done' #Lists the monitors
-alias checkmonitor='sudo -u sean DISPLAY=:0 XAUTHORITY=/home/sean/.Xauthority xrandr' #Checks the dummy monitors
-alias entervenv='source /srv/schedule/venv/bin/activate' #Enter the virtual environment
-alias checkvpn='docker exec -it qbittorrent-vpn wget -qO- ifconfig.me/ip' #Check to see if Bitorrent is still on VPN
-alias updatealias='source ~/.bash_aliases' #Update any aliases just made
-alias checkdisplay='export DISPLAY=:0.0 && xrandr' # looks at the displays becuase xrandr doesnt work over SSH
+alias mmconfig='sudo nano -l ~/MagicMirror/config/config.js'
+
+# ===== Docker stacks =====
+alias plex_stop='cd ~/plex && docker compose down'
+alias plex_start='cd ~/plex && docker compose up -d'
+alias pihole_stop='cd ~/pihole && docker compose down'
+alias pihole_start='cd ~/pihole && docker compose up -d'
+
+# ===== Editing helpers =====
+alias aptup='sudo apt update && sudo apt upgrade -y'
+alias makealias='sudo nano ~/.bash_aliases'
+alias updatealias='source ~/.bash_aliases'
+
+# ===== Power / hardware =====
+alias battery='upower -i $(upower -e | grep BAT) | grep -E "state|percentage"'
+alias seemonitor='for f in /sys/class/drm/*/status; do echo "$f: $(cat $f)"; done'
+alias checkmonitor='sudo -u sean DISPLAY=:0 XAUTHORITY=/home/sean/.Xauthority xrandr'
+alias checkdisplay='export DISPLAY=:0.0 && xrandr'
+
+# ===== Python =====
+alias entervenv='source /srv/schedule/venv/bin/activate'
+
+# ===== VPN check =====
+alias checkvpn='docker exec -it qbittorrent-vpn wget -qO- ifconfig.me/ip'
+
+# ===== Docker inspection =====
 alias dockerports='docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"'
-alias backupnow='sudo timeshift --create --comments "Manual Snapshot $(date +%Y-%m-%d_%H-%M-%S)"'
-alias restorenow='sudo timeshift --restore'
-alias media-stack='sudo nano ~/docker/media-stack/docker-compose.yml'
-alias tbdrive='cd /mnt/10_tb_drive'
-alias tbplex='cd /mnt/10_tbdrive'
-alias dc='dockercomp'
 alias dockerlist='docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.Ports}}"'
+
+# ===== Filesystems =====
 alias mntfile='sudo nano /etc/fstab'
 alias mnt='sudo mount -a'
+alias tbdrive='cd /mnt/10_tb_drive'
+alias tbplex='cd /mnt/10_tbdrive'
+
+# ===== Git helper =====
 gitone () {
   git add "$@"
   git commit -m "update $*"
   git push
 }
+
+# ===== Package cleanup (openSUSE) =====
+alias cleanup='sudo zypper clean --all && sudo journalctl --vacuum-size=100M'
+
+# ===== Updates / logs =====
+alias updatelog='sudo journalctl -u packagekit -n 30 --no-pager'
+
+# ===== Snapper (openSUSE native snapshots) =====
+alias backupnow='sudo snapper create --description "Manual Snapshot $(date +%Y-%m-%d_%H-%M-%S)"'
+alias restorenow='sudo snapper list'
+
+# ===== Docker Compose shortcuts =====
+DOCKER_BASE=~/docker
 
 #v this one cleans the install buffer if getting an error for not enough space to install something looks like this 
 #E: You don't have enough free space in /var/cache/apt/archives/.
