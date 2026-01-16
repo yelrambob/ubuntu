@@ -11,6 +11,7 @@ alias pihole_stop='cd ~/pihole && docker compose down'
 alias pihole_start='cd ~/pihole && docker compose up -d'
 
 # ===== Editing helpers =====
+alias aptup='sudo apt update && sudo apt upgrade -y'
 alias makealias='sudo nano ~/.bash_aliases'
 alias updatealias='source ~/.bash_aliases'
 
