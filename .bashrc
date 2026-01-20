@@ -189,9 +189,9 @@ nanno() {
   [ -n "$target" ] || { echo "No such item number: $1"; return 1; }
 
   if [ "$EUID" -eq 0 ]; then
-    nano "$target"
+    nano -l "$target"
   else
-    sudo nano "$target"
+    sudo nano -l "$target"
   fi
 }
 
@@ -205,5 +205,17 @@ catn() {
     cat "$target"
   else
     sudo cat "$target"
+  fi
+}
+rmx() {
+  local target
+  target=$(ls -a1 | sed -n "${1}p")
+
+  [ -n "$target" ] || { echo "No such item number: $1"; return 1; }
+
+  if [ "$EUID" -eq 0 ]; then
+    rm -rf "$target"
+  else
+    sudo rm -rf "$target"
   fi
 }
