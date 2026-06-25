@@ -173,5 +173,16 @@ email() {
 if [ -f ~/.bash_functions ]; then
   source ~/.bash_functions
 fi
-ubuntu@ip-172-31-29-129:~$ ^C
-ubuntu@ip-172-31-29-129:~$ 
+
+rmx() {
+  local target
+  target=$(ls -a1 | sed -n "${1}p")
+
+  [ -n "$target" ] || { echo "No such item number: $1"; return 1; }
+
+  if [ "$EUID" -eq 0 ]; then
+    rm -rf "$target"
+  else
+    sudo rm -rf "$target"
+  fi
+}
