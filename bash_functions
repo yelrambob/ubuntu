@@ -1,188 +1,96 @@
-alias mmmodule='cd ~magicmirror/modules'
-alias mm='cd ~/MagicMirror'
-alias mmconfig='sudo nano ~/MagicMirror/config/config.js' #alter mm config
-alias plex_stop='cd ~/plex && docker compose down' #Stop Plex
-alias plex_start='cd ~/plex && docker compose up -d' #Start Plex
-alias pihole_stop='cd ~/pihole && docker compose down' #Stop pihole
-alias pihole_start='cd ~/pihole && docker compose up -d' #Start pihole
-alias makealias='sudo nano ~/.bash_aliases' #Makes aliases
-alias battery='upower -i $(upower -e | grep BAT) | grep -E "state|percentage"' #Check the battery health
-alias updatelog='sudo tail -n 30 /var/log/auto-updates.log' #Shows what recently updated
-alias seemonitor='for f in /sys/class/drm/*/status; do echo "$f: $(cat $f)"; done' #Lists the monitors
-alias checkmonitor='sudo -u sean DISPLAY=:0 XAUTHORITY=/home/sean/.Xauthority xrandr' #Checks the dummy monitors
-alias entervenv='source /srv/schedule/venv/bin/activate' #Enter the virtual environment
-alias checkvpn='docker exec -it qbittorrent-vpn wget -qO- ifconfig.me/ip' #Check to see if Bitorrent is still on VPN
-alias updatealias='source ~/.bash_aliases' #Update any aliases just made
-alias checkdisplay='export DISPLAY=:0.0 && xrandr' # looks at the displays becuase xrandr doesnt work over SSH
-alias dockerports='docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"'
-alias backupnow='sudo timeshift --create --comments "Manual Snapshot $(date +%Y-%m-%d_%H-%M-%S)"'
-alias restorenow='sudo timeshift --restore'
-alias media-stack='sudo nano ~/docker/media-stack/docker-compose.yml'
-alias tbdrive='cd /mnt/10_tb_drive'
-alias tbplex='cd /mnt/10_tbdrive'
-alias dc='dockercomp'
-alias dockerlist='docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.Ports}}"'
-alias mntfile='sudo nano /etc/fstab'
-alias mnt='sudo mount -a'
-#v this one cleans the install buffer if getting an error for not enough space to install something looks like this 
-#E: You don't have enough free space in /var/cache/apt/archives/.
-alias cleanup='sudo apt-get clean && sudo apt-get autoremove --purge -y && sudo journalctl --vacuum-size=100M' 
-# ===== MagicMirror =====
-alias checkconfig='node ~/MagicMirror/config/config.js --check'
-alias mmmodule='cd ~/MagicMirror/modules'
-alias mm='cd ~/MagicMirror'
-alias mmconfig='sudo nano -l ~/MagicMirror/config/config.js'
+# ===== numbered directory navigation =====================================
+# lsn          list everything in the current dir (hidden too), numbered
+# cdn   <n>    cd into item <n>            (auto re-lists)
+# nanon <n>... open item(s) <n> in nano    (sudo only when needed)
+# catn  <n>... print item(s) <n>
+# rmx   <n>... remove item(s) <n>          (confirms first, auto re-lists)
+# Numbers come from the last `lsn`; re-run lsn if the dir changed.
+# =========================================================================
 
-# ===== Docker stacks =====
-alias plex_stop='cd ~/plex && docker compose down'
-alias plex_start='cd ~/plex && docker compose up -d'
-alias pihole_stop='cd ~/pihole && docker compose down'
-alias pihole_start='cd ~/pihole && docker compose up -d'
-
-# ===== Editing helpers =====
-alias aptup='sudo apt update && sudo apt upgrade -y'
-alias makealias='sudo nano ~/.bash_aliases'
-alias updatealias='source ~/.bash_aliases'
-
-# ===== Power / hardware =====
-alias battery='upower -i $(upower -e | grep BAT) | grep -E "state|percentage"'
-alias seemonitor='for f in /sys/class/drm/*/status; do echo "$f: $(cat $f)"; done'
-alias checkmonitor='sudo -u sean DISPLAY=:0 XAUTHORITY=/home/sean/.Xauthority xrandr'
-alias checkdisplay='export DISPLAY=:0.0 && xrandr'
-
-# ===== Python =====
-alias entervenv='source /srv/schedule/venv/bin/activate'
-
-# ===== VPN check =====
-alias checkvpn='docker exec -it qbittorrent-vpn wget -qO- ifconfig.me/ip'
-
-# ===== Docker inspection =====
-alias dockerports='docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"'
-alias dockerlist='docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Image}}\t{{.Ports}}"'
-
-# ===== Filesystems =====
-alias mntfile='sudo nano /etc/fstab'
-alias mnt='sudo mount -a'
-alias tbdrive='cd /mnt/10_tb_drive'
-alias tbplex='cd /mnt/10_tbdrive'
-
-# ===== Git helper =====
-gitone () {
-  git add "$@"
-  git commit -m "update $*"
-  git push
+lsn() {
+    LSN_ITEMS=()
+    local i=1 item reset='' dir='' lnk='' exe=''
+    if [[ -t 1 ]]; then
+        reset=$'\033[0m'; dir=$'\033[1;34m'; lnk=$'\033[1;36m'; exe=$'\033[1;32m'
+    fi
+    while IFS= read -r -d '' item; do
+        LSN_ITEMS[i]="$item"
+        if   [[ -L $item ]]; then printf '%3d  %s%s%s\n'  "$i" "$lnk" "$item" "$reset"
+        elif [[ -d $item ]]; then printf '%3d  %s%s%s/\n' "$i" "$dir" "$item" "$reset"
+        elif [[ -x $item ]]; then printf '%3d  %s%s%s\n'  "$i" "$exe" "$item" "$reset"
+        else                      printf '%3d  %s\n'      "$i" "$item"
+        fi
+        ((i++))
+    done < <(shopt -s dotglob nullglob; for f in *; do printf '%s\0' "$f"; done | LC_ALL=C sort -z)
+    (( ${#LSN_ITEMS[@]} )) || echo "(empty directory)"
 }
 
-# ===== Package cleanup (openSUSE) =====
-alias cleanup='sudo zypper clean --all && sudo journalctl --vacuum-size=100M'
-
-# ===== Updates / logs =====
-alias updatelog='sudo journalctl -u packagekit -n 30 --no-pager'
-
-# ===== Snapper (openSUSE native snapshots) =====
-alias backupnow='sudo snapper create --description "Manual Snapshot $(date +%Y-%m-%d_%H-%M-%S)"'
-alias restorenow='sudo snapper list'
-
-# ===== Docker Compose shortcuts =====
-DOCKER_BASE=~/docker
-
-dockerup() {
-  if [ -d "$DOCKER_BASE/$1" ]; then
-    cd "$DOCKER_BASE/$1" && docker compose up -d
-  else
-    echo "❌ No such directory: $DOCKER_BASE/$1"
-  fi
+cdn() {
+    local n=$1
+    [[ $n =~ ^[0-9]+$ ]] || { echo "cdn: usage: cdn <number> (run lsn first)" >&2; return 2; }
+    n=$((10#$n))
+    (( ${#LSN_ITEMS[@]} )) || { echo "cdn: no list yet — run lsn first" >&2; return 1; }
+    local target=${LSN_ITEMS[n]}
+    [[ -n $target ]] || { echo "cdn: no item numbered $n" >&2; return 1; }
+    [[ -d $target ]] || { echo "cdn: '$target' is not a directory" >&2; return 1; }
+    cd -- "$target" && lsn
 }
 
-dockerdown() {
-  if [ -d "$DOCKER_BASE/$1" ]; then
-    cd "$DOCKER_BASE/$1" && docker compose down
-  else
-    echo "❌ No such directory: $DOCKER_BASE/$1"
-  fi
+nanon() {
+    (( $# )) || { echo "nanon: usage: nanon <number> [number...]" >&2; return 2; }
+    (( ${#LSN_ITEMS[@]} )) || { echo "nanon: no list yet — run lsn first" >&2; return 1; }
+    local n idx target files=() need_sudo=0
+    for n in "$@"; do
+        [[ $n =~ ^[0-9]+$ ]] || { echo "nanon: '$n' is not a number" >&2; return 2; }
+        idx=$((10#$n)); target=${LSN_ITEMS[idx]}
+        [[ -n $target ]] || { echo "nanon: no item numbered $n" >&2; return 1; }
+        [[ -d $target ]] && { echo "nanon: '$target' is a directory" >&2; return 1; }
+        if [[ -e $target && ! -w $target ]] || [[ ! -e $target && ! -w . ]]; then
+            need_sudo=1
+        fi
+        files+=("$target")
+    done
+    if (( EUID != 0 && need_sudo )); then
+        sudo nano -- "${files[@]}"
+    else
+        nano -- "${files[@]}"
+    fi
 }
 
-dockerlogs() {
-  if [ -d "$DOCKER_BASE/$1" ]; then
-    cd "$DOCKER_BASE/$1" && docker compose logs -f
-  else
-    echo "❌ No such directory: $DOCKER_BASE/$1"
-  fi
+catn() {
+    (( $# )) || { echo "catn: usage: catn <number> [number...]" >&2; return 2; }
+    (( ${#LSN_ITEMS[@]} )) || { echo "catn: no list yet — run lsn first" >&2; return 1; }
+    local n idx target files=()
+    for n in "$@"; do
+        [[ $n =~ ^[0-9]+$ ]] || { echo "catn: '$n' is not a number" >&2; return 2; }
+        idx=$((10#$n)); target=${LSN_ITEMS[idx]}
+        [[ -n $target ]] || { echo "catn: no item numbered $n" >&2; return 1; }
+        [[ -d $target ]] && { echo "catn: '$target' is a directory" >&2; return 1; }
+        files+=("$target")
+    done
+    cat -- "${files[@]}"
 }
-
-dockerupdate() {
-  if [ -d "$DOCKER_BASE/$1" ]; then
-    cd "$DOCKER_BASE/$1" && docker compose pull && docker compose up -d
-  else
-    echo "❌ No such directory: $DOCKER_BASE/$1"
-  fi
-}
-
-dockershell() {
-  if [ -z "$1" ]; then
-    echo "Usage: dockershell <container_name>"
-    return 1
-  fi
-
-  container_id=$(docker ps --format '{{.Names}}' | grep -m1 "$1")
-
-  if [ -z "$container_id" ]; then
-    echo "❌ No running container matching '$1'"
-    return 1
-  fi
-
-  echo "🔹 Connecting to $container_id..."
-  docker exec -it "$container_id" bash 2>/dev/null || docker exec -it "$container_id" sh
-}
-
-dockercomp() {
-  if [ -d "$DOCKER_BASE/$1" ]; then
-    cd "$DOCKER_BASE/$1" && sudo nano docker-compose.yml
-  else
-    echo "❌ No such directory: $DOCKER_BASE/$1"
-  fi
-}
-
-# ===== Email helper =====
-email() {
-  local file="$1"
-  local subject="${2:-File Report}"
-  local recipient="${3:-$EMAIL_TO}"
-
-  if [ -z "$file" ]; then
-    echo "Usage: email <file> [subject] [recipient]"
-    return 1
-  fi
-
-  if [ ! -f "$file" ]; then
-    echo "❌ File not found: $file"
-    return 1
-  fi
-
-  curl --silent --url "smtps://smtp.gmail.com:465" \
-    --ssl-reqd \
-    --mail-from "$EMAIL_FROM" \
-    --mail-rcpt "$recipient" \
-    --user "sean.chinery@gmail.com:bjnf bhlh tjxd loip" \
-    -T <(echo -e "Subject: $subject\n\n$(cat "$file")")
-
-  echo "✅ Sent '$file' to $recipient"
-}
-
-# ===== Load additional functions =====
-if [ -f ~/.bash_functions ]; then
-  source ~/.bash_functions
-fi
 
 rmx() {
-  local target
-  target=$(ls -a1 | sed -n "${1}p")
-
-  [ -n "$target" ] || { echo "No such item number: $1"; return 1; }
-
-  if [ "$EUID" -eq 0 ]; then
-    rm -rf "$target"
-  else
-    sudo rm -rf "$target"
-  fi
+    (( $# )) || { echo "rmx: usage: rmx <number> [number...]" >&2; return 2; }
+    (( ${#LSN_ITEMS[@]} )) || { echo "rmx: no list yet — run lsn first" >&2; return 1; }
+    local n idx target targets=() need_sudo=0
+    for n in "$@"; do
+        [[ $n =~ ^[0-9]+$ ]] || { echo "rmx: '$n' is not a number" >&2; return 2; }
+        idx=$((10#$n)); target=${LSN_ITEMS[idx]}
+        [[ -n $target ]] || { echo "rmx: no item numbered $n" >&2; return 1; }
+        targets+=("$target")
+    done
+    [[ ! -w . ]] && need_sudo=1
+    printf 'rmx: about to remove %d item(s):\n' "${#targets[@]}"
+    printf '  %s\n' "${targets[@]}"
+    local reply
+    read -r -p "Proceed? [y/N] " reply
+    [[ $reply == [Yy]* ]] || { echo "rmx: cancelled"; return 1; }
+    if (( EUID != 0 && need_sudo )); then
+        sudo rm -rf -- "${targets[@]}"
+    else
+        rm -rf -- "${targets[@]}"
+    fi
+    lsn
 }
