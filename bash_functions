@@ -3,6 +3,8 @@
 # cdn   <n>    cd into item <n>            (auto re-lists)
 # nanon <n>... open item(s) <n> in nano    (sudo only when needed)
 # catn  <n>... print item(s) <n>
+# mvn   <n>... <dest>   move item(s) <n> into/to <dest>  (auto re-lists)
+# cpn   <n>... <dest>   copy item(s) <n> into/to <dest>  (auto re-lists)
 # rmx   <n>... remove item(s) <n>          (confirms first, auto re-lists)
 # Numbers come from the last `lsn`; re-run lsn if the dir changed.
 # =========================================================================
@@ -69,6 +71,52 @@ catn() {
         files+=("$target")
     done
     cat -- "${files[@]}"
+}
+
+mvn() {
+    (( $# >= 2 )) || { echo "mvn: usage: mvn <number> [number...] <destination>" >&2; return 2; }
+    (( ${#LSN_ITEMS[@]} )) || { echo "mvn: no list yet — run lsn first" >&2; return 1; }
+    local n idx target targets=() need_sudo=0
+    local dest=${*: -1}
+    local nums=("${@:1:$#-1}")
+    for n in "${nums[@]}"; do
+        [[ $n =~ ^[0-9]+$ ]] || { echo "mvn: '$n' is not a number" >&2; return 2; }
+        idx=$((10#$n)); target=${LSN_ITEMS[idx]}
+        [[ -n $target ]] || { echo "mvn: no item numbered $n" >&2; return 1; }
+        targets+=("$target")
+    done
+    if [[ -e $dest && ! -w $dest ]] || [[ ! -e $dest && ! -w $(dirname -- "$dest") ]] || [[ ! -w . ]]; then
+        need_sudo=1
+    fi
+    if (( EUID != 0 && need_sudo )); then
+        sudo mv -- "${targets[@]}" "$dest"
+    else
+        mv -- "${targets[@]}" "$dest"
+    fi
+    lsn
+}
+
+cpn() {
+    (( $# >= 2 )) || { echo "cpn: usage: cpn <number> [number...] <destination>" >&2; return 2; }
+    (( ${#LSN_ITEMS[@]} )) || { echo "cpn: no list yet — run lsn first" >&2; return 1; }
+    local n idx target targets=() need_sudo=0
+    local dest=${*: -1}
+    local nums=("${@:1:$#-1}")
+    for n in "${nums[@]}"; do
+        [[ $n =~ ^[0-9]+$ ]] || { echo "cpn: '$n' is not a number" >&2; return 2; }
+        idx=$((10#$n)); target=${LSN_ITEMS[idx]}
+        [[ -n $target ]] || { echo "cpn: no item numbered $n" >&2; return 1; }
+        targets+=("$target")
+    done
+    if [[ -e $dest && ! -w $dest ]] || [[ ! -e $dest && ! -w $(dirname -- "$dest") ]]; then
+        need_sudo=1
+    fi
+    if (( EUID != 0 && need_sudo )); then
+        sudo cp -r -- "${targets[@]}" "$dest"
+    else
+        cp -r -- "${targets[@]}" "$dest"
+    fi
+    lsn
 }
 
 rmx() {
