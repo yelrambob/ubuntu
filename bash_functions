@@ -3,6 +3,7 @@
 # cdn   <n>    cd into item <n>            (auto re-lists)
 # nanon <n>... open item(s) <n> in nano    (sudo only when needed)
 # catn  <n>... print item(s) <n>
+# sour  <n>... print the resolved path(s) of item <n>    (for use in `$(sour N)`)
 # mvn   <n>... <dest>   move item(s) <n> into/to <dest>  (auto re-lists)
 # cpn   <n>... <dest>   copy item(s) <n> into/to <dest>  (auto re-lists)
 # rmx   <n>... remove item(s) <n>          (confirms first, auto re-lists)
@@ -71,6 +72,18 @@ catn() {
         files+=("$target")
     done
     cat -- "${files[@]}"
+}
+
+sour() {
+    (( $# )) || { echo "sour: usage: sour <number> [number...]" >&2; return 2; }
+    (( ${#LSN_ITEMS[@]} )) || { echo "sour: no list yet — run lsn first" >&2; return 1; }
+    local n idx target
+    for n in "$@"; do
+        [[ $n =~ ^[0-9]+$ ]] || { echo "sour: '$n' is not a number" >&2; return 2; }
+        idx=$((10#$n)); target=${LSN_ITEMS[idx]}
+        [[ -n $target ]] || { echo "sour: no item numbered $n" >&2; return 1; }
+        printf '%s\n' "$target"
+    done
 }
 
 mvn() {
