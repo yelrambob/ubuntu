@@ -155,3 +155,50 @@ rmx() {
     fi
     lsn
 }
+
+pullgit() {
+    local repo_user="yelrambob"
+    local name target parent same_dir=0
+
+    if [[ $# -eq 0 ]]; then
+        # No args: target is the directory you're currently in
+        name=$(basename -- "$PWD")
+        parent=$(dirname -- "$PWD")
+        target="$PWD"
+        same_dir=1
+    elif [[ $1 =~ ^[0-9]+$ ]]; then
+        # Numeric arg: pull the name from the last `lsn` listing
+        (( ${#LSN_ITEMS[@]} )) || { echo "pullgit: no list yet — run lsn first" >&2; return 1; }
+        local idx=$((10#$1))
+        name=${LSN_ITEMS[idx]}
+        [[ -n $name ]] || { echo "pullgit: no item numbered $1" >&2; return 1; }
+        parent="$PWD"
+        target="$PWD/$name"
+    else
+        # String arg: repo/directory name, created/overwritten in cwd
+        name=$1
+        parent="$PWD"
+        target="$PWD/$name"
+    fi
+
+    local repo_url="https://github.com/${repo_user}/${name}.git"
+
+    echo "pullgit: about to DELETE and re-clone:"
+    echo "  target : $target"
+    echo "  source : $repo_url"
+    local reply
+    read -r -p "Proceed? [y/N] " reply
+    [[ $reply == [Yy]* ]] || { echo "pullgit: cancelled"; return 1; }
+
+    if (( same_dir )); then
+        cd "$parent" || return 1
+        rm -rf -- "$name"
+        git clone -- "$repo_url" "$name" || { echo "pullgit: clone failed" >&2; return 1; }
+        cd "$name" || return 1
+    else
+        rm -rf -- "$target"
+        git clone -- "$repo_url" "$target" || { echo "pullgit: clone failed" >&2; return 1; }
+    fi
+
+    lsn
+}
