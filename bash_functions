@@ -7,6 +7,7 @@
 # mvn   <n>... <dest>   move item(s) <n> into/to <dest>  (auto re-lists)
 # cpn   <n>... <dest>   copy item(s) <n> into/to <dest>  (auto re-lists)
 # rmx   <n>... remove item(s) <n>          (confirms first, auto re-lists)
+# pullgit <reponame> (pulls git deletes old)
 # Numbers come from the last `lsn`; re-run lsn if the dir changed.
 # =========================================================================
 
