@@ -7,7 +7,9 @@
 # mvn   <n>... <dest>   move item(s) <n> into/to <dest>  (auto re-lists)
 # cpn   <n>... <dest>   copy item(s) <n> into/to <dest>  (auto re-lists)
 # rmx   <n>... remove item(s) <n>          (confirms first, auto re-lists)
-# pullgit <reponame> (pulls git deletes old)
+# pullgit <reponame> (pulls latest, keeps anything untracked)
+# pushgit [<n>|<dir>] [commit message]   stage, commit, and push the target repo
+#   (warns on and excludes files that look like secrets, e.g. credentials.json)
 # Numbers come from the last `lsn`; re-run lsn if the dir changed.
 # =========================================================================
 
@@ -176,7 +178,7 @@ pullgit() {
         parent="$PWD"
         target="$PWD/$name"
     else
-        # String arg: repo/directory name, created/overwritten in cwd
+        # String arg: repo/directory name in cwd
         name=$1
         parent="$PWD"
         target="$PWD/$name"
@@ -184,22 +186,116 @@ pullgit() {
 
     local repo_url="https://github.com/${repo_user}/${name}.git"
 
-    echo "pullgit: about to DELETE and re-clone:"
-    echo "  target : $target"
-    echo "  source : $repo_url"
-    local reply
-    read -r -p "Proceed? [y/N] " reply
-    [[ $reply == [Yy]* ]] || { echo "pullgit: cancelled"; return 1; }
+    if [[ -d "$target/.git" ]]; then
+        echo "pullgit: updating existing repo in place (untracked files are kept):"
+        echo "  target : $target"
+        echo "  source : $repo_url"
 
-    if (( same_dir )); then
-        cd "$parent" || return 1
-        rm -rf -- "$name"
-        git clone -- "$repo_url" "$name" || { echo "pullgit: clone failed" >&2; return 1; }
-        cd "$name" || return 1
+        local dirty
+        dirty=$(git -C "$target" status --porcelain --untracked-files=no)
+        if [[ -n $dirty ]]; then
+            echo "  ⚠️  uncommitted changes to TRACKED files will be discarded:"
+            echo "$dirty" | sed 's/^/    /'
+        fi
+
+        local reply
+        read -r -p "Proceed? [y/N] " reply
+        [[ $reply == [Yy]* ]] || { echo "pullgit: cancelled"; return 1; }
+
+        git -C "$target" fetch origin || { echo "pullgit: fetch failed" >&2; return 1; }
+
+        local default_branch
+        default_branch=$(git -C "$target" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null)
+        default_branch=${default_branch#origin/}
+        [[ -n $default_branch ]] || default_branch="main"
+
+        git -C "$target" reset --hard "origin/${default_branch}" || { echo "pullgit: reset failed" >&2; return 1; }
     else
-        rm -rf -- "$target"
+        echo "pullgit: no existing repo found here — cloning fresh:"
+        echo "  target : $target"
+        echo "  source : $repo_url"
+
+        local reply
+        read -r -p "Proceed? [y/N] " reply
+        [[ $reply == [Yy]* ]] || { echo "pullgit: cancelled"; return 1; }
+
+        mkdir -p -- "$parent"
         git clone -- "$repo_url" "$target" || { echo "pullgit: clone failed" >&2; return 1; }
     fi
 
+    (( same_dir )) && cd -- "$target"
     lsn
 }
+
+pushgit() {
+    local repo_dir="$PWD" arg1="$1" msg
+
+    if [[ -n $arg1 && $arg1 =~ ^[0-9]+$ ]]; then
+        # Numeric arg: pull the name from the last `lsn` listing
+        (( ${#LSN_ITEMS[@]} )) || { echo "pushgit: no list yet — run lsn first" >&2; return 1; }
+        local idx=$((10#$arg1))
+        local name=${LSN_ITEMS[idx]}
+        [[ -n $name ]] || { echo "pushgit: no item numbered $arg1" >&2; return 1; }
+        [[ -d $name ]] || { echo "pushgit: '$name' is not a directory" >&2; return 1; }
+        repo_dir="$PWD/$name"
+        shift
+        msg="$*"
+    elif [[ -n $arg1 && -d $arg1 ]]; then
+        # String arg that's an existing directory: treat as the target
+        repo_dir="$PWD/$arg1"
+        shift
+        msg="$*"
+    else
+        # No dir arg — whole thing (if any) is the commit message
+        msg="$*"
+    fi
+
+    [[ -d "$repo_dir/.git" ]] || { echo "pushgit: '$repo_dir' is not a git repo" >&2; return 1; }
+
+    local branch
+    branch=$(git -C "$repo_dir" branch --show-current)
+    [[ -n $branch ]] || { echo "pushgit: not on a branch (detached HEAD?)" >&2; return 1; }
+
+    local status
+    status=$(git -C "$repo_dir" status --porcelain)
+    if [[ -z $status ]]; then
+        echo "pushgit: nothing to commit — working tree clean"
+        return 0
+    fi
+
+    echo "pushgit: changes in $repo_dir"
+    git -C "$repo_dir" status --short
+
+    # Never auto-stage anything that looks like a secret, gitignored or not
+    local suspicious
+    suspicious=$(echo "$status" | awk '{print $2}' | \
+        grep -Ei '(^|/)\.env($|\.)|credentials\.json$|token\.pickle$|\.pem$|\.key$|id_rsa|secrets?\.')
+    if [[ -n $suspicious ]]; then
+        echo "  ⚠️  excluding these from the commit — they look like credentials/secrets:"
+        echo "$suspicious" | sed 's/^/    /'
+    fi
+
+    if [[ -z $msg ]]; then
+        read -r -p "Commit message: " msg
+        [[ -n $msg ]] || { echo "pushgit: cancelled — empty commit message"; return 1; }
+    fi
+
+    echo "  branch  : $branch"
+    echo "  message : $msg"
+    local reply
+    read -r -p "Stage, commit, and push? [y/N] " reply
+    [[ $reply == [Yy]* ]] || { echo "pushgit: cancelled"; return 1; }
+
+    git -C "$repo_dir" add -A
+    if [[ -n $suspicious ]]; then
+        while IFS= read -r f; do
+            [[ -n $f ]] && git -C "$repo_dir" reset -q -- "$f"
+        done <<< "$suspicious"
+    fi
+
+    git -C "$repo_dir" commit -m "$msg" || { echo "pushgit: commit failed (nothing staged?)" >&2; return 1; }
+    git -C "$repo_dir" push -u origin "$branch" || { echo "pushgit: push failed" >&2; return 1; }
+
+    echo "✅ pushed to origin/$branch"
+}
+
