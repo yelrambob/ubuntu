@@ -206,17 +206,18 @@ email() {
     return 1
   fi
 
+  local sender="${EMAIL_FROM:-sean.chinery@gmail.com}"
   local basefile boundary
   basefile=$(basename -- "$file")
   boundary="EMAIL_BOUNDARY_$$_$RANDOM"
 
   curl --silent --url "smtps://smtp.gmail.com:465" \
     --ssl-reqd \
-    --mail-from "$EMAIL_FROM" \
+    --mail-from "$sender" \
     --mail-rcpt "$recipient" \
     --user "sean.chinery@gmail.com:bjnf bhlh tjxd loip" \
     -T <(
-      printf 'Subject: %s\nTo: %s\nMIME-Version: 1.0\nContent-Type: multipart/mixed; boundary="%s"\n\n' "$subject" "$recipient" "$boundary"
+      printf 'From: %s\nSubject: %s\nTo: %s\nMIME-Version: 1.0\nContent-Type: multipart/mixed; boundary="%s"\n\n' "$sender" "$subject" "$recipient" "$boundary"
       printf -- '--%s\nContent-Type: text/plain; charset="UTF-8"\n\nAttached: %s\n\n' "$boundary" "$basefile"
       printf -- '--%s\nContent-Type: application/octet-stream; name="%s"\nContent-Transfer-Encoding: base64\nContent-Disposition: attachment; filename="%s"\n\n' "$boundary" "$basefile" "$basefile"
       base64 -- "$file"
