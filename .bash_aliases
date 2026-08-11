@@ -185,6 +185,7 @@ email() {
     echo "  Email <file> as a real MIME attachment via Gmail SMTP (curl + base64)."
     echo "  subject   defaults to 'File Report'"
     echo "  recipient defaults to \$EMAIL_TO"
+    echo "  Requires \$GMAIL_USER and \$GMAIL_APP_PASSWORD (see ~/.bash_secrets.example)."
     return 0
   fi
   local file="$1"
@@ -206,7 +207,12 @@ email() {
     return 1
   fi
 
-  local sender="${EMAIL_FROM:-sean.chinery@gmail.com}"
+  if [ -z "$GMAIL_USER" ] || [ -z "$GMAIL_APP_PASSWORD" ]; then
+    echo "❌ \$GMAIL_USER / \$GMAIL_APP_PASSWORD not set — see ~/.bash_secrets.example" >&2
+    return 1
+  fi
+
+  local sender="${EMAIL_FROM:-$GMAIL_USER}"
   local basefile boundary
   basefile=$(basename -- "$file")
   boundary="EMAIL_BOUNDARY_$$_$RANDOM"
@@ -215,7 +221,7 @@ email() {
     --ssl-reqd \
     --mail-from "$sender" \
     --mail-rcpt "$recipient" \
-    --user "sean.chinery@gmail.com:bjnf bhlh tjxd loip" \
+    --user "$GMAIL_USER:$GMAIL_APP_PASSWORD" \
     -T <(
       printf 'From: %s\nSubject: %s\nTo: %s\nMIME-Version: 1.0\nContent-Type: multipart/mixed; boundary="%s"\n\n' "$sender" "$subject" "$recipient" "$boundary"
       printf -- '--%s\nContent-Type: text/plain; charset="UTF-8"\n\nAttached: %s\n\n' "$boundary" "$basefile"

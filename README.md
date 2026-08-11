@@ -8,9 +8,10 @@ a `.bashrc`, and a MagicMirror kiosk installer.
 ### `.bashrc`
 
 Standard Debian-derived interactive-shell config (history settings, prompt,
-`ls`/`grep` color aliases, completion). It sources `~/.bash_aliases` and
-`~/.bash_functions` if present, loads `nvm`, and sets a custom colored prompt
-that shows your public IP (`get_ip`) alongside the current directory.
+`ls`/`grep` color aliases, completion). It sources `~/.bash_secrets`,
+`~/.bash_aliases`, and `~/.bash_functions` if present, loads `nvm`, and sets
+a custom colored prompt that shows your public IP (`get_ip`) alongside the
+current directory.
 
 ### `.bash_aliases`
 
@@ -50,6 +51,20 @@ Shortcuts and helper functions for managing this machine's services.
 | `emn <n> [subject] [recipient]` | Same as `email`, but `<n>` is an item number from the last `lsn` listing |
 
 `$DOCKER_BASE` defaults to `~/docker`.
+
+`email`/`emn` read credentials from `$GMAIL_USER` and `$GMAIL_APP_PASSWORD`
+(a Google Account [app password](https://myaccount.google.com/apppasswords),
+not your login password) — nothing is hardcoded in this repo. Set them up
+locally:
+
+```sh
+cp .bash_secrets.example ~/.bash_secrets
+chmod 600 ~/.bash_secrets
+nano ~/.bash_secrets   # fill in GMAIL_USER / GMAIL_APP_PASSWORD
+```
+
+`~/.bash_secrets` is gitignored and sourced automatically by `.bashrc` —
+never commit real credentials to this repo.
 
 ### `bash_functions`
 
