@@ -66,7 +66,7 @@ nano ~/.bash_secrets   # fill in GMAIL_USER / GMAIL_APP_PASSWORD
 `~/.bash_secrets` is gitignored and sourced automatically by `.bashrc` —
 never commit real credentials to this repo.
 
-### `bash_functions`
+### `.bash_functions`
 
 Numbered file-navigation helpers plus lightweight git shortcuts, meant to be
 sourced from `.bashrc`. Every command below (except `lsn`) operates on the
