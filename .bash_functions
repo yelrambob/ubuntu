@@ -74,9 +74,9 @@ nanon() {
         files+=("$target")
     done
     if (( EUID != 0 && need_sudo )); then
-        sudo nano -- "${files[@]}"
+        sudo nano -l -- "${files[@]}"
     else
-        nano -- "${files[@]}"
+        nano -l -- "${files[@]}"
     fi
 }
 
