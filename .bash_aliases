@@ -169,7 +169,3 @@ email() {
   echo "✅ Sent '$file' to $recipient"
 }
 
-# ===== Load additional functions =====
-if [ -f ~/.bash_functions ]; then
-  source ~/.bash_functions
-fi
