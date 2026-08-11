@@ -1,0 +1,11 @@
+# Local secrets — never commit real credentials. Copy .bash_secrets.example
+# to ~/.bash_secrets on the target machine and fill in real values there.
+.bash_secrets
+*.env
+.env
+credentials.json
+token.pickle
+*.pem
+*.key
+id_rsa
+id_ed25519
