@@ -64,7 +64,7 @@ changes. All support `-h`/`--help` for usage.
 | `nanon <n>...` | Open item(s) `<n>` in `nano` (uses `sudo` only when needed) |
 | `catn <n>...` | Print item(s) `<n>` |
 | `sour <n>...` | Print the resolved path(s) of item(s) `<n>` (for `$(sour N)`) |
-| `mvn <n>... <dest>` | Move item(s) `<n>` into/to `<dest>` (auto re-lists) |
+| `mvn <n>... <dest>` | Move item(s) `<n>` into/to `<dest>` (auto re-lists). `<dest>` may be a path or `-<n2>` to target another lsn item's resolved path, e.g. `mvn 13 -15` |
 | `cpn <n>... <dest>` | Copy item(s) `<n>` into/to `<dest>` (auto re-lists) |
 | `rmx <n>...` | Remove item(s) `<n>`, with a confirmation prompt (auto re-lists) |
 | `pullgit [<n>\|<name>]` | Clone/update a `yelrambob/<name>` repo, keeping untracked files (no arg = update the current directory) |

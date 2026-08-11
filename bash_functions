@@ -121,6 +121,8 @@ mvn() {
     if [[ $1 == -h || $1 == --help ]]; then
         echo "Usage: mvn <number> [number...] <destination>"
         echo "  Move item(s) <number> from the last lsn listing into/to <destination>."
+        echo "  <destination> may be a path, or -<number> to target another lsn item's"
+        echo "  resolved path (e.g. mvn 13 -15 moves item 13 into/to item 15)."
         echo "  Uses sudo automatically when needed; auto re-lists afterward."
         return 0
     fi
@@ -135,6 +137,12 @@ mvn() {
         [[ -n $target ]] || { echo "mvn: no item numbered $n" >&2; return 1; }
         targets+=("$target")
     done
+    if [[ $dest =~ ^-([0-9]+)$ ]]; then
+        idx=$((10#${BASH_REMATCH[1]}))
+        target=${LSN_ITEMS[idx]}
+        [[ -n $target ]] || { echo "mvn: no item numbered ${BASH_REMATCH[1]}" >&2; return 1; }
+        dest=$target
+    fi
     if [[ -e $dest && ! -w $dest ]] || [[ ! -e $dest && ! -w $(dirname -- "$dest") ]] || [[ ! -w . ]]; then
         need_sudo=1
     fi
