@@ -90,7 +90,7 @@ changes. All support `-h`/`--help` for usage.
 |---|---|
 | `lsn` | List everything in the current directory (hidden files too), numbered |
 | `cdn <n>` | `cd` into item `<n>` (auto re-lists) |
-| `nanon <n>...` | Open item(s) `<n>` in `nano` (uses `sudo` only when needed) |
+| `nanon <n>...` | Open item(s) `<n>` in `nano with line numbers` (uses `sudo` only when needed) |
 | `catn <n>...` | Print item(s) `<n>` |
 | `sour <n>...` | Print the resolved path(s) of item(s) `<n>` (for `$(sour N)`) |
 | `mvn <n>... <dest>` | Move item(s) `<n>` into/to `<dest>` (auto re-lists). `<dest>` may be a path or `-<n2>` to target another lsn item's resolved path, e.g. `mvn 13 -15` |
