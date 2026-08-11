@@ -46,7 +46,8 @@ Shortcuts and helper functions for managing this machine's services.
 | `dockerupdate <stack>` | Pull latest images and recreate the stack |
 | `dockershell <name>` | Exec a shell into the first running container matching `<name>` |
 | `dockercomp <stack>` | Open a stack's `docker-compose.yml` in nano (sudo) |
-| `email <file> [subject] [recipient]` | Email a file's contents via Gmail SMTP |
+| `email <file> [subject] [recipient]` | Email `<file>` as a real MIME attachment via Gmail SMTP (needs only `curl` and `base64`, both standard) |
+| `emn <n> [subject] [recipient]` | Same as `email`, but `<n>` is an item number from the last `lsn` listing |
 
 `$DOCKER_BASE` defaults to `~/docker`.
 

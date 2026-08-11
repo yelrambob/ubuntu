@@ -182,7 +182,7 @@ dockercomp() {
 email() {
   if [[ $1 == -h || $1 == --help ]]; then
     echo "Usage: email <file> [subject] [recipient]"
-    echo "  Send <file> as the body of an email via Gmail SMTP."
+    echo "  Email <file> as a real MIME attachment via Gmail SMTP (curl + base64)."
     echo "  subject   defaults to 'File Report'"
     echo "  recipient defaults to \$EMAIL_TO"
     return 0
@@ -201,13 +201,44 @@ email() {
     return 1
   fi
 
+  if [ -z "$recipient" ]; then
+    echo "❌ No recipient given and \$EMAIL_TO is not set" >&2
+    return 1
+  fi
+
+  local basefile boundary
+  basefile=$(basename -- "$file")
+  boundary="EMAIL_BOUNDARY_$$_$RANDOM"
+
   curl --silent --url "smtps://smtp.gmail.com:465" \
     --ssl-reqd \
     --mail-from "$EMAIL_FROM" \
     --mail-rcpt "$recipient" \
     --user "sean.chinery@gmail.com:bjnf bhlh tjxd loip" \
-    -T <(echo -e "Subject: $subject\n\n$(cat "$file")")
+    -T <(
+      printf 'Subject: %s\nTo: %s\nMIME-Version: 1.0\nContent-Type: multipart/mixed; boundary="%s"\n\n' "$subject" "$recipient" "$boundary"
+      printf -- '--%s\nContent-Type: text/plain; charset="UTF-8"\n\nAttached: %s\n\n' "$boundary" "$basefile"
+      printf -- '--%s\nContent-Type: application/octet-stream; name="%s"\nContent-Transfer-Encoding: base64\nContent-Disposition: attachment; filename="%s"\n\n' "$boundary" "$basefile" "$basefile"
+      base64 -- "$file"
+      printf '\n--%s--\n' "$boundary"
+    )
 
   echo "✅ Sent '$file' to $recipient"
+}
+
+emn() {
+  if [[ $1 == -h || $1 == --help ]]; then
+    echo "Usage: emn <number> [subject] [recipient]"
+    echo "  Email item <number> from the last lsn listing as an attachment (see: email -h)."
+    return 0
+  fi
+  (( $# )) || { echo "emn: usage: emn <number> [subject] [recipient]" >&2; return 2; }
+  (( ${#LSN_ITEMS[@]} )) || { echo "emn: no list yet — run lsn first" >&2; return 1; }
+  local n=$1; shift
+  [[ $n =~ ^[0-9]+$ ]] || { echo "emn: '$n' is not a number" >&2; return 2; }
+  local idx=$((10#$n))
+  local target=${LSN_ITEMS[idx]}
+  [[ -n $target ]] || { echo "emn: no item numbered $n" >&2; return 1; }
+  email "$target" "$@"
 }
 
