@@ -111,6 +111,10 @@ if [ -f ~/.bash_aliases ]; then
     . ~/.bash_aliases
 fi
 
+if [ -f ~/.bash_email ]; then
+    . ~/.bash_email
+fi
+
 if [ -f ~/.bash_functions ]; then
     . ~/.bash_functions
 fi

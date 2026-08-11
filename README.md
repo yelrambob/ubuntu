@@ -9,9 +9,9 @@ a `.bashrc`, and a MagicMirror kiosk installer.
 
 Standard Debian-derived interactive-shell config (history settings, prompt,
 `ls`/`grep` color aliases, completion). It sources `~/.bash_secrets`,
-`~/.bash_aliases`, and `~/.bash_functions` if present, loads `nvm`, and sets
-a custom colored prompt that shows your public IP (`get_ip`) alongside the
-current directory.
+`~/.bash_aliases`, `~/.bash_email`, and `~/.bash_functions` if present, loads
+`nvm`, and sets a custom colored prompt that shows your public IP (`get_ip`)
+alongside the current directory.
 
 ### `.bash_aliases`
 
@@ -47,24 +47,37 @@ Shortcuts and helper functions for managing this machine's services.
 | `dockerupdate <stack>` | Pull latest images and recreate the stack |
 | `dockershell <name>` | Exec a shell into the first running container matching `<name>` |
 | `dockercomp <stack>` | Open a stack's `docker-compose.yml` in nano (sudo) |
-| `email <file> [subject] [recipient]` | Email `<file>` as a real MIME attachment via Gmail SMTP (needs only `curl` and `base64`, both standard) |
-| `emn <n> [subject] [recipient]` | Same as `email`, but `<n>` is an item number from the last `lsn` listing |
 
 `$DOCKER_BASE` defaults to `~/docker`.
 
-`email`/`emn` read credentials from `$GMAIL_USER` and `$GMAIL_APP_PASSWORD`
-(a Google Account [app password](https://myaccount.google.com/apppasswords),
-not your login password) — nothing is hardcoded in this repo. Set them up
-locally:
+### `.bash_email`
+
+Send and receive files by email through Gmail. All three support `-h`/`--help`.
+
+| Function | What it does |
+|---|---|
+| `email <file> [subject] [recipient]` | Email `<file>` as a real MIME attachment via Gmail SMTP (needs only `curl` and `base64`, both standard) |
+| `emn <n> [subject] [recipient]` | Same as `email`, but `<n>` is an item number from the last `lsn` listing |
+| `getmail` | Check the inbox (IMAP) for unread mail from `$MAIL_TRUSTED_SENDER`, save any attachments to `$MAIL_INBOX_DIR` (default `~/incoming`), then remove those messages from the inbox — needs the `munpack` command (`sudo apt install mpack`) |
+
+`email`/`emn`/`getmail` read credentials from `$GMAIL_USER` and
+`$GMAIL_APP_PASSWORD` (a Google Account
+[app password](https://myaccount.google.com/apppasswords), not your login
+password) — nothing is hardcoded in this repo. `getmail` additionally
+requires `$MAIL_TRUSTED_SENDER` (only mail from this address is ever
+processed) and IMAP enabled on the Gmail account (Settings → Forwarding and
+POP/IMAP → Enable IMAP). Set these up locally:
 
 ```sh
 cp .bash_secrets.example ~/.bash_secrets
 chmod 600 ~/.bash_secrets
-nano ~/.bash_secrets   # fill in GMAIL_USER / GMAIL_APP_PASSWORD
+nano ~/.bash_secrets   # fill in GMAIL_USER / GMAIL_APP_PASSWORD / MAIL_TRUSTED_SENDER
 ```
 
 `~/.bash_secrets` is gitignored and sourced automatically by `.bashrc` —
-never commit real credentials to this repo.
+never commit real credentials to this repo. Note: on Gmail, "removing" a
+message from the inbox via IMAP archives it (drops the Inbox label) rather
+than permanently erasing it — it still exists in All Mail.
 
 ### `.bash_functions`
 

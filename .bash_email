@@ -1,0 +1,147 @@
+# ===== Email helper =====
+email() {
+  if [[ $1 == -h || $1 == --help ]]; then
+    echo "Usage: email <file> [subject] [recipient]"
+    echo "  Email <file> as a real MIME attachment via Gmail SMTP (curl + base64)."
+    echo "  subject   defaults to 'File Report'"
+    echo "  recipient defaults to \$EMAIL_TO"
+    echo "  Requires \$GMAIL_USER and \$GMAIL_APP_PASSWORD (see ~/.bash_secrets.example)."
+    return 0
+  fi
+  local file="$1"
+  local subject="${2:-File Report}"
+  local recipient="${3:-$EMAIL_TO}"
+
+  if [ -z "$file" ]; then
+    echo "Usage: email <file> [subject] [recipient]"
+    return 1
+  fi
+
+  if [ ! -f "$file" ]; then
+    echo "❌ File not found: $file"
+    return 1
+  fi
+
+  if [ -z "$recipient" ]; then
+    echo "❌ No recipient given and \$EMAIL_TO is not set" >&2
+    return 1
+  fi
+
+  if [ -z "$GMAIL_USER" ] || [ -z "$GMAIL_APP_PASSWORD" ]; then
+    echo "❌ \$GMAIL_USER / \$GMAIL_APP_PASSWORD not set — see ~/.bash_secrets.example" >&2
+    return 1
+  fi
+
+  local sender="${EMAIL_FROM:-$GMAIL_USER}"
+  local basefile boundary
+  basefile=$(basename -- "$file")
+  boundary="EMAIL_BOUNDARY_$$_$RANDOM"
+
+  curl --silent --url "smtps://smtp.gmail.com:465" \
+    --ssl-reqd \
+    --mail-from "$sender" \
+    --mail-rcpt "$recipient" \
+    --user "$GMAIL_USER:$GMAIL_APP_PASSWORD" \
+    -T <(
+      printf 'From: %s\nSubject: %s\nTo: %s\nMIME-Version: 1.0\nContent-Type: multipart/mixed; boundary="%s"\n\n' "$sender" "$subject" "$recipient" "$boundary"
+      printf -- '--%s\nContent-Type: text/plain; charset="UTF-8"\n\nAttached: %s\n\n' "$boundary" "$basefile"
+      printf -- '--%s\nContent-Type: application/octet-stream; name="%s"\nContent-Transfer-Encoding: base64\nContent-Disposition: attachment; filename="%s"\n\n' "$boundary" "$basefile" "$basefile"
+      base64 -- "$file"
+      printf '\n--%s--\n' "$boundary"
+    )
+
+  echo "✅ Sent '$file' to $recipient"
+}
+
+emn() {
+  if [[ $1 == -h || $1 == --help ]]; then
+    echo "Usage: emn <number> [subject] [recipient]"
+    echo "  Email item <number> from the last lsn listing as an attachment (see: email -h)."
+    return 0
+  fi
+  (( $# )) || { echo "emn: usage: emn <number> [subject] [recipient]" >&2; return 2; }
+  (( ${#LSN_ITEMS[@]} )) || { echo "emn: no list yet — run lsn first" >&2; return 1; }
+  local n=$1; shift
+  [[ $n =~ ^[0-9]+$ ]] || { echo "emn: '$n' is not a number" >&2; return 2; }
+  local idx=$((10#$n))
+  local target=${LSN_ITEMS[idx]}
+  [[ -n $target ]] || { echo "emn: no item numbered $n" >&2; return 1; }
+  email "$target" "$@"
+}
+
+getmail() {
+  if [[ $1 == -h || $1 == --help ]]; then
+    echo "Usage: getmail"
+    echo "  Check the Gmail inbox (IMAP) for unread messages from \$MAIL_TRUSTED_SENDER,"
+    echo "  save any attachments to \$MAIL_INBOX_DIR (default ~/incoming), then remove"
+    echo "  those messages from the inbox (Gmail: this archives them — they still exist"
+    echo "  in All Mail, just no longer in Inbox / won't be reprocessed)."
+    echo "  Requires \$GMAIL_USER, \$GMAIL_APP_PASSWORD, \$MAIL_TRUSTED_SENDER"
+    echo "  (see ~/.bash_secrets.example), IMAP enabled on the Gmail account, and the"
+    echo "  'munpack' command (Debian/Ubuntu: sudo apt install mpack)."
+    return 0
+  fi
+
+  if [ -z "$GMAIL_USER" ] || [ -z "$GMAIL_APP_PASSWORD" ]; then
+    echo "❌ \$GMAIL_USER / \$GMAIL_APP_PASSWORD not set — see ~/.bash_secrets.example" >&2
+    return 1
+  fi
+  if [ -z "$MAIL_TRUSTED_SENDER" ]; then
+    echo "❌ \$MAIL_TRUSTED_SENDER not set — see ~/.bash_secrets.example" >&2
+    return 1
+  fi
+  if ! command -v munpack >/dev/null 2>&1; then
+    echo "❌ 'munpack' not found — install it: sudo apt install mpack" >&2
+    return 1
+  fi
+
+  local dest="${MAIL_INBOX_DIR:-$HOME/incoming}"
+  mkdir -p -- "$dest"
+
+  local auth=(--silent --user "$GMAIL_USER:$GMAIL_APP_PASSWORD")
+  local search
+  search=$(curl "${auth[@]}" --url "imaps://imap.gmail.com/INBOX" \
+    --request "UID SEARCH UNSEEN FROM \"$MAIL_TRUSTED_SENDER\"") || {
+    echo "❌ getmail: IMAP search failed — check credentials and that IMAP is enabled" >&2
+    return 1
+  }
+
+  local uids
+  uids=$(printf '%s\n' "$search" | awk '/^\* SEARCH/{ for (i=3;i<=NF;i++) print $i }')
+
+  if [ -z "$uids" ]; then
+    echo "getmail: no new messages from $MAIL_TRUSTED_SENDER"
+    return 0
+  fi
+
+  local uid count=0 tmpmsg before after saved
+  for uid in $uids; do
+    tmpmsg=$(mktemp)
+    if ! curl "${auth[@]}" --url "imaps://imap.gmail.com/INBOX;UID=$uid" -o "$tmpmsg"; then
+      echo "getmail: failed to fetch UID $uid" >&2
+      rm -f -- "$tmpmsg"
+      continue
+    fi
+
+    before=$(find "$dest" -maxdepth 1 -type f | wc -l)
+    munpack -q -t -C "$dest" -- "$tmpmsg" >/dev/null 2>&1
+    after=$(find "$dest" -maxdepth 1 -type f | wc -l)
+    saved=$(( after - before ))
+    rm -f -- "$tmpmsg"
+
+    if (( saved > 0 )); then
+      echo "getmail: saved $saved file(s) from UID $uid"
+    else
+      echo "getmail: UID $uid had no attachments"
+    fi
+
+    curl "${auth[@]}" --url "imaps://imap.gmail.com/INBOX" \
+      --request "UID STORE $uid +FLAGS.SILENT (\Deleted)" >/dev/null
+    curl "${auth[@]}" --url "imaps://imap.gmail.com/INBOX" \
+      --request "UID EXPUNGE $uid" >/dev/null
+
+    ((count++))
+  done
+
+  echo "✅ getmail: processed $count message(s) into $dest"
+}
