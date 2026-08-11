@@ -68,6 +68,11 @@ alias tbplex='cd /mnt/10_tbdrive'
 
 # ===== Git helper =====
 gitone () {
+  if [[ $1 == -h || $1 == --help ]]; then
+    echo "Usage: gitone <path>..."
+    echo "  git add the given path(s), commit with an auto-generated message, and push."
+    return 0
+  fi
   git add "$@"
   git commit -m "update $*"
   git push
@@ -87,6 +92,11 @@ alias restorenow='sudo snapper list'
 DOCKER_BASE=~/docker
 
 dockerup() {
+  if [[ $1 == -h || $1 == --help ]]; then
+    echo "Usage: dockerup <stack>"
+    echo "  cd into \$DOCKER_BASE/<stack> and run 'docker compose up -d'."
+    return 0
+  fi
   if [ -d "$DOCKER_BASE/$1" ]; then
     cd "$DOCKER_BASE/$1" && docker compose up -d
   else
@@ -95,6 +105,11 @@ dockerup() {
 }
 
 dockerdown() {
+  if [[ $1 == -h || $1 == --help ]]; then
+    echo "Usage: dockerdown <stack>"
+    echo "  cd into \$DOCKER_BASE/<stack> and run 'docker compose down'."
+    return 0
+  fi
   if [ -d "$DOCKER_BASE/$1" ]; then
     cd "$DOCKER_BASE/$1" && docker compose down
   else
@@ -103,6 +118,11 @@ dockerdown() {
 }
 
 dockerlogs() {
+  if [[ $1 == -h || $1 == --help ]]; then
+    echo "Usage: dockerlogs <stack>"
+    echo "  cd into \$DOCKER_BASE/<stack> and run 'docker compose logs -f'."
+    return 0
+  fi
   if [ -d "$DOCKER_BASE/$1" ]; then
     cd "$DOCKER_BASE/$1" && docker compose logs -f
   else
@@ -111,6 +131,11 @@ dockerlogs() {
 }
 
 dockerupdate() {
+  if [[ $1 == -h || $1 == --help ]]; then
+    echo "Usage: dockerupdate <stack>"
+    echo "  cd into \$DOCKER_BASE/<stack> and run 'docker compose pull && docker compose up -d'."
+    return 0
+  fi
   if [ -d "$DOCKER_BASE/$1" ]; then
     cd "$DOCKER_BASE/$1" && docker compose pull && docker compose up -d
   else
@@ -119,6 +144,11 @@ dockerupdate() {
 }
 
 dockershell() {
+  if [[ $1 == -h || $1 == --help ]]; then
+    echo "Usage: dockershell <container_name>"
+    echo "  Exec into the first running container whose name matches <container_name> (bash, falling back to sh)."
+    return 0
+  fi
   if [ -z "$1" ]; then
     echo "Usage: dockershell <container_name>"
     return 1
@@ -136,6 +166,11 @@ dockershell() {
 }
 
 dockercomp() {
+  if [[ $1 == -h || $1 == --help ]]; then
+    echo "Usage: dockercomp <stack>"
+    echo "  cd into \$DOCKER_BASE/<stack> and open its docker-compose.yml in nano (sudo)."
+    return 0
+  fi
   if [ -d "$DOCKER_BASE/$1" ]; then
     cd "$DOCKER_BASE/$1" && sudo nano docker-compose.yml
   else
@@ -145,6 +180,13 @@ dockercomp() {
 
 # ===== Email helper =====
 email() {
+  if [[ $1 == -h || $1 == --help ]]; then
+    echo "Usage: email <file> [subject] [recipient]"
+    echo "  Send <file> as the body of an email via Gmail SMTP."
+    echo "  subject   defaults to 'File Report'"
+    echo "  recipient defaults to \$EMAIL_TO"
+    return 0
+  fi
   local file="$1"
   local subject="${2:-File Report}"
   local recipient="${3:-$EMAIL_TO}"
