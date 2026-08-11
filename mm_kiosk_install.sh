@@ -10,6 +10,16 @@ MM_URL="http://34.26.147.91:8080"
 USER_NAME="$(logname)"
 HOME_DIR="/home/$USER_NAME"
 
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+  echo "Usage: mm_kiosk_install.sh"
+  echo "  Installs and configures Chromium kiosk mode pointed at a MagicMirror server"
+  echo "  ($MM_URL) on a Raspberry Pi running Pi OS Lite: installs X11/openbox/chromium,"
+  echo "  enables console auto-login, sets up autostart scripts, disables screen blanking,"
+  echo "  sets gpu_mem, enables the watchdog, then reboots."
+  echo "  Run as the target user with sudo privileges; takes no arguments."
+  exit 0
+fi
+
 echo "🔧 Installing MagicMirror kiosk for user: $USER_NAME"
 sleep 2
 

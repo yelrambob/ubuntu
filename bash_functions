@@ -14,6 +14,12 @@
 # =========================================================================
 
 lsn() {
+    if [[ $1 == -h || $1 == --help ]]; then
+        echo "Usage: lsn"
+        echo "  List everything in the current directory (hidden files too), numbered."
+        echo "  Populates LSN_ITEMS[] for use by cdn/nanon/catn/sour/mvn/cpn/rmx/pullgit/pushgit."
+        return 0
+    fi
     LSN_ITEMS=()
     local i=1 item reset='' dir='' lnk='' exe=''
     if [[ -t 1 ]]; then
@@ -32,6 +38,11 @@ lsn() {
 }
 
 cdn() {
+    if [[ $1 == -h || $1 == --help ]]; then
+        echo "Usage: cdn <number>"
+        echo "  cd into the item numbered <number> from the last lsn listing (auto re-lists)."
+        return 0
+    fi
     local n=$1
     [[ $n =~ ^[0-9]+$ ]] || { echo "cdn: usage: cdn <number> (run lsn first)" >&2; return 2; }
     n=$((10#$n))
@@ -43,6 +54,12 @@ cdn() {
 }
 
 nanon() {
+    if [[ $1 == -h || $1 == --help ]]; then
+        echo "Usage: nanon <number> [number...]"
+        echo "  Open item(s) <number> (from the last lsn listing) in nano."
+        echo "  Uses sudo automatically when the target isn't writable."
+        return 0
+    fi
     (( $# )) || { echo "nanon: usage: nanon <number> [number...]" >&2; return 2; }
     (( ${#LSN_ITEMS[@]} )) || { echo "nanon: no list yet — run lsn first" >&2; return 1; }
     local n idx target files=() need_sudo=0
@@ -64,6 +81,11 @@ nanon() {
 }
 
 catn() {
+    if [[ $1 == -h || $1 == --help ]]; then
+        echo "Usage: catn <number> [number...]"
+        echo "  Print the contents of item(s) <number> from the last lsn listing."
+        return 0
+    fi
     (( $# )) || { echo "catn: usage: catn <number> [number...]" >&2; return 2; }
     (( ${#LSN_ITEMS[@]} )) || { echo "catn: no list yet — run lsn first" >&2; return 1; }
     local n idx target files=()
@@ -78,6 +100,12 @@ catn() {
 }
 
 sour() {
+    if [[ $1 == -h || $1 == --help ]]; then
+        echo "Usage: sour <number> [number...]"
+        echo "  Print the resolved path(s) of item <number> from the last lsn listing."
+        echo "  Intended for use inside \$(sour N)."
+        return 0
+    fi
     (( $# )) || { echo "sour: usage: sour <number> [number...]" >&2; return 2; }
     (( ${#LSN_ITEMS[@]} )) || { echo "sour: no list yet — run lsn first" >&2; return 1; }
     local n idx target
@@ -90,6 +118,12 @@ sour() {
 }
 
 mvn() {
+    if [[ $1 == -h || $1 == --help ]]; then
+        echo "Usage: mvn <number> [number...] <destination>"
+        echo "  Move item(s) <number> from the last lsn listing into/to <destination>."
+        echo "  Uses sudo automatically when needed; auto re-lists afterward."
+        return 0
+    fi
     (( $# >= 2 )) || { echo "mvn: usage: mvn <number> [number...] <destination>" >&2; return 2; }
     (( ${#LSN_ITEMS[@]} )) || { echo "mvn: no list yet — run lsn first" >&2; return 1; }
     local n idx target targets=() need_sudo=0
@@ -113,6 +147,12 @@ mvn() {
 }
 
 cpn() {
+    if [[ $1 == -h || $1 == --help ]]; then
+        echo "Usage: cpn <number> [number...] <destination>"
+        echo "  Copy item(s) <number> from the last lsn listing into/to <destination>."
+        echo "  Uses sudo automatically when needed; auto re-lists afterward."
+        return 0
+    fi
     (( $# >= 2 )) || { echo "cpn: usage: cpn <number> [number...] <destination>" >&2; return 2; }
     (( ${#LSN_ITEMS[@]} )) || { echo "cpn: no list yet — run lsn first" >&2; return 1; }
     local n idx target targets=() need_sudo=0
@@ -136,6 +176,12 @@ cpn() {
 }
 
 rmx() {
+    if [[ $1 == -h || $1 == --help ]]; then
+        echo "Usage: rmx <number> [number...]"
+        echo "  Remove item(s) <number> from the last lsn listing."
+        echo "  Confirms before deleting; uses sudo automatically when needed; auto re-lists afterward."
+        return 0
+    fi
     (( $# )) || { echo "rmx: usage: rmx <number> [number...]" >&2; return 2; }
     (( ${#LSN_ITEMS[@]} )) || { echo "rmx: no list yet — run lsn first" >&2; return 1; }
     local n idx target targets=() need_sudo=0
@@ -160,6 +206,14 @@ rmx() {
 }
 
 pullgit() {
+    if [[ $1 == -h || $1 == --help ]]; then
+        echo "Usage: pullgit [<number>|<name>]"
+        echo "  Pull the latest changes for a yelrambob/<name> repo, keeping untracked files."
+        echo "  No arg   : treat the current directory as the repo to update."
+        echo "  <number> : pull the name from the last lsn listing, clone/update in cwd."
+        echo "  <name>   : clone/update yelrambob/<name> in the current directory."
+        return 0
+    fi
     local repo_user="yelrambob"
     local name target parent same_dir=0
 
@@ -228,6 +282,15 @@ pullgit() {
 }
 
 pushgit() {
+    if [[ $1 == -h || $1 == --help ]]; then
+        echo "Usage: pushgit [<number>|<dir>] [commit message]"
+        echo "  Stage, commit, and push the target repo."
+        echo "  No dir arg : use the current directory as the repo."
+        echo "  <number>   : target the dir named at that position in the last lsn listing."
+        echo "  <dir>      : target that directory directly."
+        echo "  Warns on and excludes files that look like secrets (e.g. credentials.json, .env, *.pem)."
+        return 0
+    fi
     local repo_dir="$PWD" arg1="$1" msg
 
     if [[ -n $arg1 && $arg1 =~ ^[0-9]+$ ]]; then
