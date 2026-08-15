@@ -21,16 +21,23 @@ lsn() {
         return 0
     fi
     LSN_ITEMS=()
-    local i=1 item reset='' dir='' lnk='' exe=''
+    local i=1 item reset='' dir='' lnk='' exe='' sh='' bat='' hidden=''
     if [[ -t 1 ]]; then
         reset=$'\033[0m'; dir=$'\033[1;34m'; lnk=$'\033[1;36m'; exe=$'\033[1;32m'
+        sh=$'\033[1;32m'; bat=$'\033[0;90m'; hidden=$'\033[1;31m'
     fi
     while IFS= read -r -d '' item; do
         LSN_ITEMS[i]="$item"
-        if   [[ -L $item ]]; then printf '%3d  %s%s%s\n'  "$i" "$lnk" "$item" "$reset"
-        elif [[ -d $item ]]; then printf '%3d  %s%s%s/\n' "$i" "$dir" "$item" "$reset"
-        elif [[ -x $item ]]; then printf '%3d  %s%s%s\n'  "$i" "$exe" "$item" "$reset"
-        else                      printf '%3d  %s\n'      "$i" "$item"
+        local color=''
+        if   [[ $item == .* ]]; then color=$hidden
+        elif [[ -L $item ]];   then color=$lnk
+        elif [[ -d $item ]];   then color=$dir
+        elif [[ $item == *.sh ]]; then color=$sh
+        elif [[ $item == *.bat ]]; then color=$bat
+        elif [[ -x $item ]];   then color=$exe
+        fi
+        if [[ -d $item ]]; then printf '%3d  %s%s%s/\n' "$i" "$color" "$item" "$reset"
+        else                    printf '%3d  %s%s%s\n'  "$i" "$color" "$item" "$reset"
         fi
         ((i++))
     done < <(shopt -s dotglob nullglob; for f in *; do printf '%s\0' "$f"; done | LC_ALL=C sort -z)
