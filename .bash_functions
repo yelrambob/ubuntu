@@ -17,6 +17,7 @@ lsn() {
     if [[ $1 == -h || $1 == --help ]]; then
         echo "Usage: lsn"
         echo "  List everything in the current directory (hidden files too), numbered."
+        echo "  Grouped: hidden, symlinks, files, dirs (alphabetical within each group)."
         echo "  Populates LSN_ITEMS[] for use by cdn/nanon/catn/sour/mvn/cpn/rmx/pullgit/pushgit."
         return 0
     fi
@@ -26,7 +27,15 @@ lsn() {
         reset=$'\033[0m'; dir=$'\033[1;34m'; lnk=$'\033[1;36m'; exe=$'\033[1;32m'
         sh=$'\033[1;32m'; bat=$'\033[0;90m'; hidden=$'\033[1;31m'
     fi
+    local hidden_items=() lnk_items=() file_items=() dir_items=()
     while IFS= read -r -d '' item; do
+        if   [[ $item == .* ]]; then hidden_items+=("$item")
+        elif [[ -L $item ]];   then lnk_items+=("$item")
+        elif [[ -d $item ]];   then dir_items+=("$item")
+        else                        file_items+=("$item")
+        fi
+    done < <(shopt -s dotglob nullglob; for f in *; do printf '%s\0' "$f"; done | LC_ALL=C sort -z)
+    for item in "${hidden_items[@]}" "${lnk_items[@]}" "${file_items[@]}" "${dir_items[@]}"; do
         LSN_ITEMS[i]="$item"
         local color=''
         if   [[ $item == .* ]]; then color=$hidden
@@ -40,7 +49,7 @@ lsn() {
         else                    printf '%3d  %s%s%s\n'  "$i" "$color" "$item" "$reset"
         fi
         ((i++))
-    done < <(shopt -s dotglob nullglob; for f in *; do printf '%s\0' "$f"; done | LC_ALL=C sort -z)
+    done
     (( ${#LSN_ITEMS[@]} )) || echo "(empty directory)"
 }
 
