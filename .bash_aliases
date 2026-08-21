@@ -1,3 +1,4 @@
+alias sendbook='echo "See attached." | mutt -s "book.html from EC2" -a ~/protocol_builder/book.html -- sean.chinery@atlantichealth.org'
 alias mmmodule='cd ~magicmirror/modules'
 alias mm='cd ~/MagicMirror'
 alias mmconfig='sudo nano ~/MagicMirror/config/config.js' #alter mm config
