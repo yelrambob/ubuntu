@@ -1,3 +1,7 @@
+alias runcomfy='python3 main.py --cpu'
+alias virtual='source .venv/bin/activate'
+alias protocol='./gradlew run --args="'$HOME/protocol_builder/ProtocolData'>
+alias big='cool-retro-term --fullscreen'
 alias sendbook='echo "See attached." | mutt -s "book.html from EC2" -a ~/protocol_builder/book.html -- sean.chinery@atlantichealth.org'
 alias mmmodule='cd ~magicmirror/modules'
 alias mm='cd ~/MagicMirror'
