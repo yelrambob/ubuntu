@@ -117,6 +117,27 @@ curl -fsSL https://raw.githubusercontent.com/yelrambob/ubuntu/main/mm_kiosk_inst
 See the `installation steps` file for the manual, step-by-step equivalent of
 what this script automates.
 
+### `wake_ordered_app.py`
+
+Wakes up the Streamlit app at https://ordered.streamlit.app/ when it's gone
+to sleep from inactivity, by opening the page (headless Chromium via
+Playwright) and clicking the "Yes, get this app back up!" button. If the app
+is already running, it exits without doing anything.
+
+Setup:
+
+```sh
+pip install playwright
+playwright install --with-deps chromium
+```
+
+Run it directly with `python3 wake_ordered_app.py`, or schedule it weekday
+mornings with cron (`crontab -e`):
+
+```
+0 6 * * 1-5 /usr/bin/python3 /path/to/wake_ordered_app.py >> /var/log/wake_ordered_app.log 2>&1
+```
+
 ### `installation steps`
 
 Plain-text notes documenting the manual steps for setting up the MagicMirror
