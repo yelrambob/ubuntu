@@ -117,6 +117,31 @@ curl -fsSL https://raw.githubusercontent.com/yelrambob/ubuntu/main/mm_kiosk_inst
 See the `installation steps` file for the manual, step-by-step equivalent of
 what this script automates.
 
+### `nice_dcv_ec2_install.sh`
+
+Turns a headless Ubuntu EC2 instance into a full desktop reachable from a
+plain web browser — no VPN, SSH client, or RDP/VNC client needed. Installs a
+minimal GNOME desktop + GDM3, then installs and configures
+[NICE DCV](https://aws.amazon.com/hpc/dcv/) (AWS's remote-display protocol,
+free to use on EC2) with an automatic console session and its built-in
+HTML5 web client on port 8443.
+
+Run with `-h`/`--help` to see a summary without making changes.
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/yelrambob/ubuntu/main/nice_dcv_ec2_install.sh | sudo bash
+```
+
+If SSH is off-limits (e.g. a locked-down corporate network), get a shell on
+the instance instead via **AWS Systems Manager Session Manager**: EC2
+console → select the instance → Connect → "Session Manager" tab → Connect.
+That's a browser-based shell with no inbound ports and no SSH keys — run the
+script there.
+
+After it finishes and reboots, open inbound TCP 8443 on the instance's
+security group (scoped to your own IP, not `0.0.0.0/0`) and browse to
+`https://<instance-public-ip>:8443`.
+
 ### `wake_ordered_app.py`
 
 Wakes up the Streamlit app at https://ordered.streamlit.app/ when it's gone
