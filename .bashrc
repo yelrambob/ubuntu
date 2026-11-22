@@ -103,21 +103,19 @@ alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo
 # ~/.bash_aliases, instead of adding them here directly.
 # See /usr/share/doc/bash-doc/examples in the bash-doc package.
 
-if [ -f ~/.bash_secrets ]; then
-    . ~/.bash_secrets
-fi
-
-if [ -f ~/.bash_aliases ]; then
-    . ~/.bash_aliases
-fi
-
-if [ -f ~/.bash_email ]; then
-    . ~/.bash_email
-fi
-
-if [ -f ~/.bash_functions ]; then
-    . ~/.bash_functions
-fi
+# Load the companion files (secrets, aliases, email, functions). Each one is
+# looked for in ~ first, then next to wherever this .bashrc really lives
+# (symlinks followed) -- so `source ~/ubuntu/.bashrc` from a cloned copy of
+# the repo works too, not just copies placed directly in your home folder.
+__bashrc_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+for __f in .bash_secrets .bash_aliases .bash_email .bash_functions; do
+    if [ -f "$HOME/$__f" ]; then
+        . "$HOME/$__f"
+    elif [ -f "$__bashrc_dir/$__f" ]; then
+        . "$__bashrc_dir/$__f"
+    fi
+done
+unset __f __bashrc_dir
 
 # enable programmable completion features (you don't need to enable
 # this, if it's already enabled in /etc/bash.bashrc and /etc/profile
@@ -134,19 +132,23 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 export PATH="$PATH:$HOME/.local/bin"
-export PATH="$PATH:$HOME/.local/bin"
 
-## Show primary IPv4 address in prompt
-#get_ip() {
-#  curl -s ifconfig.me
-#}
-####export PS1="[\$(get_ip)] \w \$ "
-# Show primary IPv4 address in prompt
+# Public IP shown in the prompt. Cached for 5 minutes with a 2-second timeout,
+# so a slow/offline network (or a VPN reconnecting) never freezes the prompt.
+# Falls back to the LAN IP if curl is missing or the lookup fails.
 get_ip() {
-  curl -s ifconfig.me
+  local cache="/tmp/.public_ip_$UID" ip=""
+  if [ -s "$cache" ] && [ $(( $(date +%s) - $(stat -c %Y "$cache") )) -lt 300 ]; then
+    cat "$cache"; return
+  fi
+  command -v curl >/dev/null 2>&1 && ip=$(curl -s -m 2 ifconfig.me 2>/dev/null)
+  if [[ $ip =~ ^[0-9a-fA-F.:]+$ ]]; then
+    printf '%s' "$ip" > "$cache"
+    printf '%s' "$ip"
+  else
+    hostname -I 2>/dev/null | awk '{printf "%s", $1}'
+  fi
 }
-export PS1="[\$(get_ip)] \w \$ "
-
 
 export PS1="\[\e[31m\][\[\e[m\]\[\e[38;5;172m\][\$(get_ip)] \[\e[38;5;214m\]\W\[\e[m\]\[\e[31m\]]\[\e[m\]\\$ "
  

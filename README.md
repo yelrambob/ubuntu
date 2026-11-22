@@ -3,6 +3,22 @@
 Personal dotfiles and scripts for a home Linux setup — shell aliases/functions,
 a `.bashrc`, and a MagicMirror kiosk installer.
 
+## Installing the shell files
+
+The `.bash*` files must end up in your **home folder** (`~/.bashrc`,
+`~/.bash_aliases`, ...) — `.bashrc` loads its companion files from there (or,
+as a fallback, from the same folder it lives in). Easiest way, as your normal
+user (not sudo):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/yelrambob/ubuntu/main/install_dotfiles.sh | bash
+source ~/.bashrc
+```
+
+That clones the repo to `~/ubuntu` (or uses the clone you run it from),
+backs up any existing files to `*.bak-<timestamp>`, and symlinks the repo's
+files into `~` so a `git pull` updates your shell. `--copy` copies instead.
+
 ## Files
 
 ### `.bashrc`
@@ -141,6 +157,40 @@ script there.
 After it finishes and reboots, open inbound TCP 8443 on the instance's
 security group (scoped to your own IP, not `0.0.0.0/0`) and browse to
 `https://<instance-public-ip>:8443`.
+
+### `server_setup.sh`
+
+Sets up an Ubuntu / Ubuntu MATE box as an always-on home server: common CLI
+tools, OpenSSH, **Tailscale**, UFW firewall (SSH + your LAN + Tailscale
+allowed, everything else blocked), fail2ban, automatic security updates,
+Docker, and no sleep/suspend (including laptop lid close). Safe to re-run.
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/yelrambob/ubuntu/main/server_setup.sh | sudo bash
+# with options:
+curl -fsSL https://raw.githubusercontent.com/yelrambob/ubuntu/main/server_setup.sh | sudo bash -s -- --subnet --exit-node
+```
+
+Options: `--subnet` (reach your whole LAN over Tailscale), `--exit-node`,
+`--tailscale-ssh`, `--cockpit` (web admin on :9090), `--no-docker`. Set
+`TS_AUTHKEY=tskey-...` to log in to Tailscale without opening a URL.
+
+### `vpn_setup.sh`
+
+Routes the whole server's internet traffic through a VPN provider, using the
+WireGuard `.conf` (recommended) or OpenVPN `.ovpn` file you download from
+them, and starts it at boot. **The server stays reachable at its local IP
+(LAN) and over Tailscale while the VPN is on** — the script adds a routing
+rule that keeps LAN traffic off the tunnel. `--killswitch` (WireGuard) blocks
+internet traffic if the VPN drops, while LAN/Tailscale keep working.
+
+```sh
+sudo bash vpn_setup.sh ~/Downloads/provider.conf --killswitch
+sudo bash vpn_setup.sh --status     # also: --off, --on, --remove
+```
+
+What stops working: reaching the server through your home *public* IP with
+router port-forwarding (replies leave via the VPN). Use Tailscale for that.
 
 ### `wake_ordered_app.py`
 
