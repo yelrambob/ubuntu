@@ -1,3 +1,7 @@
+# Lets aliases work after sudo (e.g. "sudo dockerlist"); bash normally only
+# expands an alias in the first word of a command.
+alias sudo='sudo '
+
 alias runcomfy='python3 main.py --cpu'
 alias virtual='source .venv/bin/activate'
 alias protocol='./gradlew run --args="'"$HOME"'/protocol_builder/ProtocolData"'
