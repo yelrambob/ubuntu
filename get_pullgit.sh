@@ -16,18 +16,12 @@
 {
   __repo="https://github.com/yelrambob/ubuntu.git"
   __dir="$HOME/ubuntu"
-  # Branch with the latest fixes; falls back to main if it no longer exists.
-  __branch="claude/cool-turing-llmhah"
+  __branch="main"
 
   echo "==> Checking for git and curl"
   if ! command -v git >/dev/null || ! command -v curl >/dev/null; then
     sudo apt-get update && sudo apt-get install -y git curl
   fi
-
-  if ! git ls-remote --exit-code --heads "$__repo" "$__branch" >/dev/null 2>&1; then
-    __branch="main"
-  fi
-  echo "==> Using branch: $__branch"
 
   if [ -d "$__dir/.git" ]; then
     echo "==> Updating $__dir (untracked files are kept)"
