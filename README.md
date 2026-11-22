@@ -5,6 +5,12 @@ a `.bashrc`, and a MagicMirror kiosk installer.
 
 ## Installing the shell files
 
+**Fresh machine, quickest way:** open `get_pullgit.sh`, copy the whole file,
+and paste it into a terminal. It installs git, clones this repo to `~/ubuntu`,
+installs the shell files below, and loads them so `pullgit` and your aliases
+work right away. After that, `cd ~/ubuntu && pullgit` updates everything.
+
+
 The `.bash*` files must end up in your **home folder** (`~/.bashrc`,
 `~/.bash_aliases`, ...) — `.bashrc` loads its companion files from there (or,
 as a fallback, from the same folder it lives in). Easiest way, as your normal

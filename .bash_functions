@@ -282,10 +282,16 @@ pullgit() {
 
         git -C "$target" fetch origin || { echo "pullgit: fetch failed" >&2; return 1; }
 
+        # Stay on the branch you're on, if it exists on GitHub; otherwise use
+        # the repo's default branch (usually main).
         local default_branch
-        default_branch=$(git -C "$target" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null)
-        default_branch=${default_branch#origin/}
-        [[ -n $default_branch ]] || default_branch="main"
+        default_branch=$(git -C "$target" symbolic-ref --short HEAD 2>/dev/null)
+        if [[ -z $default_branch ]] || ! git -C "$target" rev-parse --verify -q "origin/$default_branch" >/dev/null; then
+            default_branch=$(git -C "$target" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null)
+            default_branch=${default_branch#origin/}
+            [[ -n $default_branch ]] || default_branch="main"
+        fi
+        echo "  branch : $default_branch"
 
         git -C "$target" reset --hard "origin/${default_branch}" || { echo "pullgit: reset failed" >&2; return 1; }
     else
